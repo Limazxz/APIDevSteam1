@@ -1,4 +1,4 @@
-﻿using APIDevSteamJau.Models;
+﻿using APIDevSteam1.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +11,19 @@ namespace APIDevSteam1.Data
         }
 
         //Dbset
+        public DbSet<Jogo> Jogos { get; set; }
+        public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<JogoCategoria> JogosCategorias { get; set; }
+        public DbSet<JogoMidia> JogosMidia { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder);
             // tabelas
+            builder.Entity<Jogo>().ToTable("Jogos");
+            builder.Entity<Categoria>().ToTable("Categorias");
+            builder.Entity<JogoCategoria>().ToTable("JogosCategorias");
+            builder.Entity<JogoMidia>().ToTable("JogosMidia");
 
         }
     }

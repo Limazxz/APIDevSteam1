@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace APIDevSteamJau.Controllers
+namespace APIDevSteam1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
