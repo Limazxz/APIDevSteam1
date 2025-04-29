@@ -113,6 +113,23 @@ namespace APIDevSteam1.Controllers
                 return NotFound();
             }
 
+            //Verifica se o carrinho existe
+            var carrinho = await _context.Carinhos.FindAsync(itemCarrinho.CarrinhoId);
+            if (carrinho == null)
+            {
+                return NotFound("Carrinho não encontrado.");
+            }
+
+            //Remove o valor total docarrinho
+            carrinho.ValorTotal -= itemCarrinho.PrecoTotal;
+
+            //Verifica se o valor total do carrinho é menor que 0
+            if (carrinho.ValorTotal < 0)
+            {
+                carrinho.ValorTotal = 0;
+                return BadRequest("O valor total do carrinho não pode ser menor que zero.");
+            }
+
             _context.ItensCarrinhos.Remove(itemCarrinho);
             await _context.SaveChangesAsync();
 
