@@ -4,6 +4,7 @@ using APIDevSteam1.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APIDevSteam1.Migrations
 {
     [DbContext(typeof(APIContext))]
-    partial class APIContextModelSnapshot : ModelSnapshot
+    [Migration("20250429172909_LimiteUso")]
+    partial class LimiteUso
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,27 +99,6 @@ namespace APIDevSteam1.Migrations
                     b.HasKey("CupomId");
 
                     b.ToTable("Cupons", (string)null);
-                });
-
-            modelBuilder.Entity("APIDevSteam1.Models.CupomCarrinho", b =>
-                {
-                    b.Property<Guid>("CupomCarrinhoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CarrinhoId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CupomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("CupomCarrinhoId");
-
-                    b.HasIndex("CarrinhoId");
-
-                    b.HasIndex("CupomId");
-
-                    b.ToTable("CuponsCarrinhos", (string)null);
                 });
 
             modelBuilder.Entity("APIDevSteam1.Models.ItemCarrinho", b =>
@@ -437,25 +419,6 @@ namespace APIDevSteam1.Migrations
                         .HasForeignKey("UsuarioId1");
 
                     b.Navigation("Usuario");
-                });
-
-            modelBuilder.Entity("APIDevSteam1.Models.CupomCarrinho", b =>
-                {
-                    b.HasOne("APIDevSteam1.Models.Carrinho", "Carrinho")
-                        .WithMany()
-                        .HasForeignKey("CarrinhoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("APIDevSteam1.Models.Cupom", "Cupom")
-                        .WithMany()
-                        .HasForeignKey("CupomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Carrinho");
-
-                    b.Navigation("Cupom");
                 });
 
             modelBuilder.Entity("APIDevSteam1.Models.ItemCarrinho", b =>
