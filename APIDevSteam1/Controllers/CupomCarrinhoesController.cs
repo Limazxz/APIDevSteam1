@@ -7,28 +7,29 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APIDevSteam1.Data;
 using APIDevSteam1.Models;
+using APIDevSteam1.Data;
 
 namespace APIDevSteam1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CupomCarrinhoesController : ControllerBase
+    public class CuponsCarrinhosController : ControllerBase
     {
         private readonly APIContext _context;
 
-        public CupomCarrinhoesController(APIContext context)
+        public CuponsCarrinhosController(APIContext context)
         {
             _context = context;
         }
 
-        // GET: api/CupomCarrinhoes
+        // GET: api/CuponsCarrinhos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CupomCarrinho>>> GetCuponsCarrinhos()
+        public async Task<ActionResult<IEnumerable<CupomCarrinho>>> GetCuponsCarrinho()
         {
             return await _context.CuponsCarrinhos.ToListAsync();
         }
 
-        // GET: api/CupomCarrinhoes/5
+        // GET: api/CuponsCarrinhos/5
         [HttpGet("{id}")]
         public async Task<ActionResult<CupomCarrinho>> GetCupomCarrinho(Guid id)
         {
@@ -42,7 +43,7 @@ namespace APIDevSteam1.Controllers
             return cupomCarrinho;
         }
 
-        // PUT: api/CupomCarrinhoes/5
+        // PUT: api/CuponsCarrinhos/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCupomCarrinho(Guid id, CupomCarrinho cupomCarrinho)
@@ -73,18 +74,18 @@ namespace APIDevSteam1.Controllers
             return NoContent();
         }
 
-        // POST: api/CupomCarrinhoes
+        // POST: api/CuponsCarrinhos
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<CupomCarrinho>> PostCupomCarrinho(CupomCarrinho cupomCarrinho)
         {
-            _context.CuponsCarrinhos.Add(cupomCarrinho);
+            _context.CuponsCarrinho.Add(cupomCarrinho);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetCupomCarrinho", new { id = cupomCarrinho.CupomCarrinhoId }, cupomCarrinho);
         }
 
-        // DELETE: api/CupomCarrinhoes/5
+        // DELETE: api/CuponsCarrinhos/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCupomCarrinho(Guid id)
         {
@@ -104,61 +105,93 @@ namespace APIDevSteam1.Controllers
         {
             return _context.CuponsCarrinhos.Any(e => e.CupomCarrinhoId == id);
         }
-        [HttpPost]
-        [Route("AplicarCupom")]
-        public async Task<IActionResult> AplicarCupom(Guid carrinhoId, Guid cupomId)
+
+        // [HttpPost] : AplicarCupom
+        [HttpPost("AplicarCupom")]
+        public async Task<IActionResult> AplicarCupom(Guid idCupom, Guid idCarrinho)
         {
-            // Verifica se o carrinho existe
-            var carrinho = await _context.Carinhos.FindAsync(carrinhoId);
+
+            // Verificar Se o idCarrinho exite no contexto Carrinhos;
+            var carrinho = await _context.Carinhos.FindAsync(idCarrinho);
             if (carrinho == null)
             {
-                return NotFound("Carrinho não encontrado.");
+                return NotFound("Carrinho não Encontrado!");
             }
 
-            // Verifica se o cupom existe
-            var cupom = await _context.Cupons.FindAsync(cupomId);
+            // Verificar se o idCupom exite no contexto Cupons;
+            var cupom = await _context.Cupons.FindAsync(idCupom);
             if (cupom == null)
             {
-                return NotFound("Cupom não encontrado.");
+                return NotFound("Cupom não Encontrado!");
             }
 
-            // Verifica se o cupom é válido e está ativo
-            if (!cupom.Ativo.HasValue || !cupom.Ativo.Value || (cupom.DataValidade.HasValue && cupom.DataValidade.Value < DateTime.UtcNow))
+            // Verificar se o cupom já foi aplicado no carrinho
+            var cupomCarrinho = await _context.CuponsCarrinhos
+                .FirstOrDefaultAsync(cc => cc.CarrinhoId == idCarrinho && cc.CupomId == idCupom);
+            if (cupomCarrinho != null)
             {
-                return BadRequest("Cupom inválido ou expirado.");
+                return BadRequest("Cupom já aplicado no carrinho!");
             }
 
-            // Calcula o desconto
-            var desconto = (carrinho.ValorTotal * cupom.Desconto) / 100;
-            carrinho.ValorTotal -= desconto;
+            // Verificar se o carrinho já foi finalizado
+            if (carrinho.Finalizado == true)
+            {
+                return BadRequest("Carrinho já finalizado!");
+            }
 
-            // Atualiza o carrinho no banco de dados
-            _context.Entry(carrinho).State = EntityState.Modified;
+            // Verificando a data de validade do cupom, somente se a data de validade for diferente de nulo
+            if (cupom.DataValidade != null)
+            {
+                if (cupom.DataValidade < DateTime.Now)
+                {
+                    // Se a data de validade for menor que a data atual, o cupom está expirado
+                    cupom.Ativo = false;
+                    return BadRequest("Cupom expirado!");
+                }
+            }
 
-            // Cria a relação entre o cupom e o carrinho
-            var cupomCarrinho = new CupomCarrinho
+            // Verificando o limite de uso do cupom
+            if (cupom.LimiteUso != null)
+            {
+                if (cupom.LimiteUso <= 0)
+                {
+                    return BadRequest("Cupom sem limite de uso!");
+                }
+            }
+
+            // Verfiicando se o cupom esta ativo
+            if (cupom.Ativo == false)
+            {
+                return BadRequest("Cupom desativado!");
+            }
+
+            // Aplicando o cupom no carrinho 
+            cupomCarrinho = new CupomCarrinho
             {
                 CupomCarrinhoId = Guid.NewGuid(),
-                CarrinhoId = carrinhoId,
-                CupomId = cupomId
+                CarrinhoId = idCarrinho,
+                CupomId = idCupom,
+                DataAplicacao = DateTime.Now
             };
+
             _context.CuponsCarrinhos.Add(cupomCarrinho);
 
-            try
+            // Atualizando o limite de uso do cupom, caso seja diferente de nulo
+            // Se atingir o limite de uso, o cupom será desativado
+            if (cupom.LimiteUso != null)
             {
-                await _context.SaveChangesAsync();
+                cupom.LimiteUso--;
+                if (cupom.LimiteUso == 0)
+                {
+                    cupom.Ativo = false;
+                }
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Erro ao salvar as alterações no banco de dados.");
-            }
+            _context.Entry(cupom).State = EntityState.Modified;
 
-            return Ok(new
-            {
-                Mensagem = "Cupom aplicado com sucesso.",
-                CarrinhoId = carrinhoId,
-                ValorTotalAtualizado = carrinho.ValorTotal
-            });
+            await _context.SaveChangesAsync();
+
+
+            return Ok(cupomCarrinho);
         }
     }
 }
